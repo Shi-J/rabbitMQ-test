@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:rabbit="http://www.springframework.org/schema/rabbit"
+       xsi:schemaLocation="http://www.springframework.org/schema/rabbit
+       http://www.springframework.org/schema/rabbit/spring-rabbit-1.4.xsd
+       http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd">
+    <!--
+         1.定义rabbitMQ的连接工厂
+         host:什么库  127.0.0.1是我本机ip
+         port:端口号
+         username:用户名
+         password:密码
+         virtual-host:名字
+     -->
+    <rabbit:connection-factory id="connectionFactory"
+            host="127.0.0.1" port="5672" username="shij"
+            password="123456" virtual-host="/hosts_shij"/>
+
+    <!--
+        2.定义rabbitMQ模板，指定连接工厂
+        exchange:交换机名
+        queue:队列名称
+    -->
+    <rabbit:template id="springTemplate"
+                     connection-factory="connectionFactory"
+                     exchange="springExchange" />
+
+    <!--
+        3.MQ的管理,包括队列、交换器 声明等
+    -->
+    <rabbit:admin connection-factory="connectionFactory" />
+
+
+    <!--
+        4.定义队列,自动声明
+        name 队列名称
+        auto-declare：是否自动声明
+        durable：是否存储持久化
+    -->
+    <rabbit:queue name="springQueue" auto-declare="true" durable="true"/>
+
+    <!--
+         5.定义交换器,自动声明
+
+    -->
+
+    <rabbit:fanout-exchange name="springExchange" auto-declare="true">
+        <!--    判定交换机-->
+        <rabbit:bindings>
+            <rabbit:binding queue="springQueue"/>
+        </rabbit:bindings>
+    </rabbit:fanout-exchange>
+
+
+    <!-- 6.创建消费者 -->
+    <bean id="springReceive" class="com.stone.rabbitmq.springmq.SpringReceive" />
+    <!--
+         7.队列监听 消费者监听
+         connection-factory：获取连接的bean id
+         ref：消费者bean的id
+         method：消费者方法
+         queue-names：监听的队列名称
+    -->
+    <rabbit:listener-container connection-factory="connectionFactory">
+        <rabbit:listener ref="springReceive" method="consume" queue-names="springQueue" />
+    </rabbit:listener-container>
+
+
+</beans>
